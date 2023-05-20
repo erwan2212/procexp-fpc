@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="C:\FPC\3.0.0\bin\i386-win32\fpc.exe" Date="1198548637"/>
+  <Params Value=" -Twin64 -Px86_64 -MDelphi -Scghi -CX -O3 -XX -l -vewnhibq &quot;-FiC:\Users\erwan\Documents\-= SOURCES =-\delphi\system\procexp-fpc\lib\x86_64-win64&quot; &quot;-FuC:\Users\erwan\Documents\-= SOURCES =-\delphi\system\procexp-fpc\&quot; &quot;-FUC:\Users\erwan\Documents\-= SOURCES =-\delphi\system\procexp-fpc\lib\x86_64-win64\&quot; procexp.lpr"/>
+</CONFIG>

