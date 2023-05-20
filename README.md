@@ -1,5 +1,5 @@
 # procexp-fpc
-Playing with unsecured driver(s) allowing handling handles.</br></br>
+Playing with unsecured driver(s) allowing access to protected handles.</br></br>
 
 procexp.exe load "%cd%\procexp.sys"</br>
 procexp.exe ps</br>
